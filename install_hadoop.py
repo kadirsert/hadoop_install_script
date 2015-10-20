@@ -52,174 +52,172 @@ def installPrereq(nodeName):
 
 if __name__ == '__main__':
     config = getConfig()
+    #print config.items('DataNodes')
+    nameNode = config.get('NameNode', 'NN')
+    secNameNode = config.get('SecNameNode', 'SNN')
+    jobTracker = config.get('JobTracker', 'JT')
+    dataNodes = config.get('DataNodes', 'DNList')
+    dataNodes = dataNodes.split(',')
+    taskTrackers = config.get('TaskTrackers', 'TTList')
+    javaPackageFile = config.get('Java', 'JavaPackage')
+    hadoopVersion = config.get('Hadoop', 'Version')
+    dfsDataDir = config.get('Hadoop', 'DfsDataDir')
+
+    print 'NameNode: ' + nameNode
+    print 'Secondary NameNode: ' + secNameNode
+    print 'JobTracker: ' + jobTracker
+    print 'DataNode\'lar:'
+    for dataNode in dataNodes:
+        print 'DataNode: ' + dataNode
+    print 'dfs.data.dir: ' + dfsDataDir
 
 
-#print config.items('DataNodes')
-nameNode = config.get('NameNode', 'NN')
-secNameNode = config.get('SecNameNode', 'SNN')
-jobTracker = config.get('JobTracker', 'JT')
-dataNodes = config.get('DataNodes', 'DNList')
-dataNodes = dataNodes.split(',')
-taskTrackers = config.get('TaskTrackers', 'TTList')
-javaPackageFile = config.get('Java', 'JavaPackage')
-hadoopVersion = config.get('Hadoop', 'Version')
-dfsDataDir = config.get('Hadoop', 'DfsDataDir')
-
-print 'NameNode: ' + nameNode
-print 'Secondary NameNode: ' + secNameNode
-print 'JobTracker: ' + jobTracker
-print 'DataNode\'lar:'
-for dataNode in dataNodes:
-    print 'DataNode: ' + dataNode
-print 'dfs.data.dir: ' + dfsDataDir
+    while True:
+        choice = raw_input("Kurulum Baslasin mi?(e/h): ").lower()
+        if choice in yes:
+            break
+        elif choice in no:
+            sys.exit(0)
+        else:
+            print("Lutfen 'e' ya da 'h' seklinde yanitlayin!!!")
 
 
-while True:
-    choice = raw_input("Kurulum Baslasin mi?(e/h): ").lower()
-    if choice in yes:
-        break
-    elif choice in no:
-        sys.exit(0)
-    else:
-        print("Lutfen 'e' ya da 'h' seklinde yanitlayin!!!")
+    installPrereq(nameNode)
+    installPrereq(secNameNode)
+    installPrereq(jobTracker)
+    for dataNode in dataNodes:
+        installPrereq(dataNode)
 
 
-installPrereq(nameNode)
-installPrereq(secNameNode)
-installPrereq(jobTracker)
-for dataNode in dataNodes:
-    installPrereq(dataNode)
+    subprocess.call(["rm", "-rf", workingDir + "/tmp"])
+    subprocess.call(["mkdir", workingDir + "/tmp"])
+    subprocess.call(["cp", "-frp", workingDir + "/" + hadoopVersion, workingDir + "/tmp"])
 
 
-subprocess.call(["rm", "-rf", workingDir + "/tmp"])
-subprocess.call(["mkdir", workingDir + "/tmp"])
-subprocess.call(["cp", "-frp", workingDir + "/" + hadoopVersion, workingDir + "/tmp"])
+    xmlConfiguration = ET.Element('configuration')
+
+    xmlProperty = ET.SubElement(xmlConfiguration, 'property')
+    xmlName = ET.SubElement(xmlProperty, 'name')
+    xmlName.text = "fs.default.name"
+    xmlValue = ET.SubElement(xmlProperty, 'value')
+    xmlValue.text = "hdfs://" + nameNode + ":8020"
+
+    text_file = open(workingDir + "/tmp/" + hadoopVersion + "/conf/core-site.xml", "w")
+    text_file.write(prettify(xmlConfiguration))
+    text_file.close()
+
+    subprocess.call(["sed", "-i", "1d", workingDir + "/tmp/" + hadoopVersion + "/conf/core-site.xml"])
+    subprocess.call(["sed", "-i", "1i \ ", workingDir + "/tmp/" + hadoopVersion + "/conf/core-site.xml"])
+    subprocess.call(["sed", "-i", "1i <!-- Put site-specific property overrides in this file. -->", workingDir + "/tmp/" + hadoopVersion + "/conf/core-site.xml"])
+    subprocess.call(["sed", "-i", "1i \ ", workingDir + "/tmp/" + hadoopVersion + "/conf/core-site.xml"])
+    subprocess.call(["sed", "-i", "1i <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>", workingDir + "/tmp/" + hadoopVersion + "/conf/core-site.xml"])
+    subprocess.call(["sed", "-i", "1i <?xml version=\"1.0\"?>", workingDir + "/tmp/" + hadoopVersion + "/conf/core-site.xml"])
 
 
-xmlConfiguration = ET.Element('configuration')
+    xmlConfiguration = ET.Element('configuration')
 
-xmlProperty = ET.SubElement(xmlConfiguration, 'property')
-xmlName = ET.SubElement(xmlProperty, 'name')
-xmlName.text = "fs.default.name"
-xmlValue = ET.SubElement(xmlProperty, 'value')
-xmlValue.text = "hdfs://" + nameNode + ":8020"
+    xmlProperty = ET.SubElement(xmlConfiguration, 'property')
+    xmlName = ET.SubElement(xmlProperty, 'name')
+    xmlName.text = "dfs.name.dir"
+    xmlValue = ET.SubElement(xmlProperty, 'value')
+    xmlValue.text = "/hadoop/nn/"
 
-text_file = open(workingDir + "/tmp/" + hadoopVersion + "/conf/core-site.xml", "w")
-text_file.write(prettify(xmlConfiguration))
-text_file.close()
+    xmlProperty = ET.SubElement(xmlConfiguration, 'property')
+    xmlName = ET.SubElement(xmlProperty, 'name')
+    xmlName.text = "dfs.data.dir"
+    xmlValue = ET.SubElement(xmlProperty, 'value')
+    xmlValue.text = dfsDataDir
 
-subprocess.call(["sed", "-i", "1d", workingDir + "/tmp/" + hadoopVersion + "/conf/core-site.xml"])
-subprocess.call(["sed", "-i", "1i \ ", workingDir + "/tmp/" + hadoopVersion + "/conf/core-site.xml"])
-subprocess.call(["sed", "-i", "1i <!-- Put site-specific property overrides in this file. -->", workingDir + "/tmp/" + hadoopVersion + "/conf/core-site.xml"])
-subprocess.call(["sed", "-i", "1i \ ", workingDir + "/tmp/" + hadoopVersion + "/conf/core-site.xml"])
-subprocess.call(["sed", "-i", "1i <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>", workingDir + "/tmp/" + hadoopVersion + "/conf/core-site.xml"])
-subprocess.call(["sed", "-i", "1i <?xml version=\"1.0\"?>", workingDir + "/tmp/" + hadoopVersion + "/conf/core-site.xml"])
+    xmlProperty = ET.SubElement(xmlConfiguration, 'property')
+    xmlName = ET.SubElement(xmlProperty, 'name')
+    xmlName.text = "dfs.datanode.max.xcievers"
+    xmlValue = ET.SubElement(xmlProperty, 'value')
+    xmlValue.text = "4096"
 
+    xmlProperty = ET.SubElement(xmlConfiguration, 'property')
+    xmlName = ET.SubElement(xmlProperty, 'name')
+    xmlName.text = "dfs.datanode.du.reserved"
+    xmlValue = ET.SubElement(xmlProperty, 'value')
+    xmlValue.text = "5368709120"
+    xmlFinal = ET.SubElement(xmlProperty, 'final')
+    xmlFinal.text = "true"
 
-xmlConfiguration = ET.Element('configuration')
+    xmlProperty = ET.SubElement(xmlConfiguration, 'property')
+    xmlName = ET.SubElement(xmlProperty, 'name')
+    xmlName.text = "dfs.support.append"
+    xmlValue = ET.SubElement(xmlProperty, 'value')
+    xmlValue.text = "true"
 
-xmlProperty = ET.SubElement(xmlConfiguration, 'property')
-xmlName = ET.SubElement(xmlProperty, 'name')
-xmlName.text = "dfs.name.dir"
-xmlValue = ET.SubElement(xmlProperty, 'value')
-xmlValue.text = "/hadoop/nn/"
+    text_file = open(workingDir + "/tmp/" + hadoopVersion + "/conf/hdfs-site.xml", "w")
+    text_file.write(prettify(xmlConfiguration))
+    text_file.close()
 
-xmlProperty = ET.SubElement(xmlConfiguration, 'property')
-xmlName = ET.SubElement(xmlProperty, 'name')
-xmlName.text = "dfs.data.dir"
-xmlValue = ET.SubElement(xmlProperty, 'value')
-xmlValue.text = dfsDataDir
-
-xmlProperty = ET.SubElement(xmlConfiguration, 'property')
-xmlName = ET.SubElement(xmlProperty, 'name')
-xmlName.text = "dfs.datanode.max.xcievers"
-xmlValue = ET.SubElement(xmlProperty, 'value')
-xmlValue.text = "4096"
-
-xmlProperty = ET.SubElement(xmlConfiguration, 'property')
-xmlName = ET.SubElement(xmlProperty, 'name')
-xmlName.text = "dfs.datanode.du.reserved"
-xmlValue = ET.SubElement(xmlProperty, 'value')
-xmlValue.text = "5368709120"
-xmlFinal = ET.SubElement(xmlProperty, 'final')
-xmlFinal.text = "true"
-
-xmlProperty = ET.SubElement(xmlConfiguration, 'property')
-xmlName = ET.SubElement(xmlProperty, 'name')
-xmlName.text = "dfs.support.append"
-xmlValue = ET.SubElement(xmlProperty, 'value')
-xmlValue.text = "true"
-
-text_file = open(workingDir + "/tmp/" + hadoopVersion + "/conf/hdfs-site.xml", "w")
-text_file.write(prettify(xmlConfiguration))
-text_file.close()
-
-subprocess.call(["sed", "-i", "1d", workingDir + "/tmp/" + hadoopVersion + "/conf/hdfs-site.xml"])
-subprocess.call(["sed", "-i", "1i \ ", workingDir + "/tmp/" + hadoopVersion + "/conf/hdfs-site.xml"])
-subprocess.call(["sed", "-i", "1i <!-- Put site-specific property overrides in this file. -->", workingDir + "/tmp/" + hadoopVersion + "/conf/hdfs-site.xml"])
-subprocess.call(["sed", "-i", "1i \ ", workingDir + "/tmp/" + hadoopVersion + "/conf/hdfs-site.xml"])
-subprocess.call(["sed", "-i", "1i <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>", workingDir + "/tmp/" + hadoopVersion + "/conf/hdfs-site.xml"])
-subprocess.call(["sed", "-i", "1i <?xml version=\"1.0\"?>", workingDir + "/tmp/" + hadoopVersion + "/conf/hdfs-site.xml"])
+    subprocess.call(["sed", "-i", "1d", workingDir + "/tmp/" + hadoopVersion + "/conf/hdfs-site.xml"])
+    subprocess.call(["sed", "-i", "1i \ ", workingDir + "/tmp/" + hadoopVersion + "/conf/hdfs-site.xml"])
+    subprocess.call(["sed", "-i", "1i <!-- Put site-specific property overrides in this file. -->", workingDir + "/tmp/" + hadoopVersion + "/conf/hdfs-site.xml"])
+    subprocess.call(["sed", "-i", "1i \ ", workingDir + "/tmp/" + hadoopVersion + "/conf/hdfs-site.xml"])
+    subprocess.call(["sed", "-i", "1i <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>", workingDir + "/tmp/" + hadoopVersion + "/conf/hdfs-site.xml"])
+    subprocess.call(["sed", "-i", "1i <?xml version=\"1.0\"?>", workingDir + "/tmp/" + hadoopVersion + "/conf/hdfs-site.xml"])
 
 
-xmlConfiguration = ET.Element('configuration')
+    xmlConfiguration = ET.Element('configuration')
 
-xmlProperty = ET.SubElement(xmlConfiguration, 'property')
-xmlName = ET.SubElement(xmlProperty, 'name')
-xmlName.text = "mapred.job.tracker"
-xmlValue = ET.SubElement(xmlProperty, 'value')
-xmlValue.text = jobTracker + ":8021"
+    xmlProperty = ET.SubElement(xmlConfiguration, 'property')
+    xmlName = ET.SubElement(xmlProperty, 'name')
+    xmlName.text = "mapred.job.tracker"
+    xmlValue = ET.SubElement(xmlProperty, 'value')
+    xmlValue.text = jobTracker + ":8021"
 
-xmlProperty = ET.SubElement(xmlConfiguration, 'property')
-xmlName = ET.SubElement(xmlProperty, 'name')
-xmlName.text = "mapred.local.dir"
-xmlValue = ET.SubElement(xmlProperty, 'value')
-xmlValue.text = "/hadoop/mapred/"
+    xmlProperty = ET.SubElement(xmlConfiguration, 'property')
+    xmlName = ET.SubElement(xmlProperty, 'name')
+    xmlName.text = "mapred.local.dir"
+    xmlValue = ET.SubElement(xmlProperty, 'value')
+    xmlValue.text = "/hadoop/mapred/"
 
-xmlProperty = ET.SubElement(xmlConfiguration, 'property')
-xmlName = ET.SubElement(xmlProperty, 'name')
-xmlName.text = "mapred.system.dir"
-xmlValue = ET.SubElement(xmlProperty, 'value')
-xmlValue.text = "/hadoop/mapredsystem/"
+    xmlProperty = ET.SubElement(xmlConfiguration, 'property')
+    xmlName = ET.SubElement(xmlProperty, 'name')
+    xmlName.text = "mapred.system.dir"
+    xmlValue = ET.SubElement(xmlProperty, 'value')
+    xmlValue.text = "/hadoop/mapredsystem/"
 
-xmlProperty = ET.SubElement(xmlConfiguration, 'property')
-xmlName = ET.SubElement(xmlProperty, 'name')
-xmlName.text = "mapred.child.java.opts"
-xmlValue = ET.SubElement(xmlProperty, 'value')
-xmlValue.text = "-Xmx1024m"
+    xmlProperty = ET.SubElement(xmlConfiguration, 'property')
+    xmlName = ET.SubElement(xmlProperty, 'name')
+    xmlName.text = "mapred.child.java.opts"
+    xmlValue = ET.SubElement(xmlProperty, 'value')
+    xmlValue.text = "-Xmx1024m"
 
-text_file = open(workingDir + "/tmp/" + hadoopVersion + "/conf/mapred-site.xml", "w")
-text_file.write(prettify(xmlConfiguration))
-text_file.close()
+    text_file = open(workingDir + "/tmp/" + hadoopVersion + "/conf/mapred-site.xml", "w")
+    text_file.write(prettify(xmlConfiguration))
+    text_file.close()
 
-subprocess.call(["sed", "-i", "1d", workingDir + "/tmp/" + hadoopVersion + "/conf/mapred-site.xml"])
-subprocess.call(["sed", "-i", "1i \ ", workingDir + "/tmp/" + hadoopVersion + "/conf/mapred-site.xml"])
-subprocess.call(["sed", "-i", "1i <!-- Put site-specific property overrides in this file. -->", workingDir + "/tmp/" + hadoopVersion + "/conf/mapred-site.xml"])
-subprocess.call(["sed", "-i", "1i \ ", workingDir + "/tmp/" + hadoopVersion + "/conf/mapred-site.xml"])
-subprocess.call(["sed", "-i", "1i <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>", workingDir + "/tmp/" + hadoopVersion + "/conf/mapred-site.xml"])
-subprocess.call(["sed", "-i", "1i <?xml version=\"1.0\"?>", workingDir + "/tmp/" + hadoopVersion + "/conf/mapred-site.xml"])
-
-
-text_file = open(workingDir + "/tmp/" + hadoopVersion + "/conf/masters", "w")
-text_file.write(secNameNode)
-text_file.close()
+    subprocess.call(["sed", "-i", "1d", workingDir + "/tmp/" + hadoopVersion + "/conf/mapred-site.xml"])
+    subprocess.call(["sed", "-i", "1i \ ", workingDir + "/tmp/" + hadoopVersion + "/conf/mapred-site.xml"])
+    subprocess.call(["sed", "-i", "1i <!-- Put site-specific property overrides in this file. -->", workingDir + "/tmp/" + hadoopVersion + "/conf/mapred-site.xml"])
+    subprocess.call(["sed", "-i", "1i \ ", workingDir + "/tmp/" + hadoopVersion + "/conf/mapred-site.xml"])
+    subprocess.call(["sed", "-i", "1i <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>", workingDir + "/tmp/" + hadoopVersion + "/conf/mapred-site.xml"])
+    subprocess.call(["sed", "-i", "1i <?xml version=\"1.0\"?>", workingDir + "/tmp/" + hadoopVersion + "/conf/mapred-site.xml"])
 
 
-text_file = open(workingDir + "/tmp/" + hadoopVersion + "/conf/slaves", "w")
-for dataNode in dataNodes:
-    text_file.write(dataNode + "\n")
-text_file.close()
+    text_file = open(workingDir + "/tmp/" + hadoopVersion + "/conf/masters", "w")
+    text_file.write(secNameNode)
+    text_file.close()
 
 
-subprocess.call(["sed", "-i", "/export JAVA_HOME/a \JAVA_HOME=/usr/java/default", workingDir + "/tmp/" + hadoopVersion + "/conf/hadoop-env.sh"])
+    text_file = open(workingDir + "/tmp/" + hadoopVersion + "/conf/slaves", "w")
+    for dataNode in dataNodes:
+        text_file.write(dataNode + "\n")
+    text_file.close()
 
 
-subprocess.call(["scp", "-r", workingDir + "/tmp/" + hadoopVersion, "root@" + nameNode.strip() + ":/usr/local/"])
-subprocess.call(["ssh", "root@" + nameNode.strip(), "ln -s /usr/local/" + hadoopVersion + " /usr/local/hadoop"])
-subprocess.call(["scp", "-r", workingDir + "/tmp/" + hadoopVersion, "root@" + secNameNode.strip() + ":/usr/local/"])
-subprocess.call(["ssh", "root@" + secNameNode.strip(), "ln -s /usr/local/" + hadoopVersion + " /usr/local/hadoop"])
-subprocess.call(["scp", "-r", workingDir + "/tmp/" + hadoopVersion, "root@" + jobTracker.strip() + ":/usr/local/"])
-subprocess.call(["ssh", "root@" + jobTracker.strip(), "ln -s /usr/local/" + hadoopVersion + " /usr/local/hadoop"])
-for dataNode in dataNodes:
-    subprocess.call(["scp", "-r", workingDir + "/tmp/" + hadoopVersion, "root@" + dataNode.strip() + ":/usr/local/"])
-    subprocess.call(["ssh", "root@" + dataNode.strip(), "ln -s /usr/local/" + hadoopVersion + " /usr/local/hadoop"])
+    subprocess.call(["sed", "-i", "/export JAVA_HOME/a \JAVA_HOME=/usr/java/default", workingDir + "/tmp/" + hadoopVersion + "/conf/hadoop-env.sh"])
+
+
+    subprocess.call(["scp", "-r", workingDir + "/tmp/" + hadoopVersion, "root@" + nameNode.strip() + ":/usr/local/"])
+    subprocess.call(["ssh", "root@" + nameNode.strip(), "ln -s /usr/local/" + hadoopVersion + " /usr/local/hadoop"])
+    subprocess.call(["scp", "-r", workingDir + "/tmp/" + hadoopVersion, "root@" + secNameNode.strip() + ":/usr/local/"])
+    subprocess.call(["ssh", "root@" + secNameNode.strip(), "ln -s /usr/local/" + hadoopVersion + " /usr/local/hadoop"])
+    subprocess.call(["scp", "-r", workingDir + "/tmp/" + hadoopVersion, "root@" + jobTracker.strip() + ":/usr/local/"])
+    subprocess.call(["ssh", "root@" + jobTracker.strip(), "ln -s /usr/local/" + hadoopVersion + " /usr/local/hadoop"])
+    for dataNode in dataNodes:
+        subprocess.call(["scp", "-r", workingDir + "/tmp/" + hadoopVersion, "root@" + dataNode.strip() + ":/usr/local/"])
+        subprocess.call(["ssh", "root@" + dataNode.strip(), "ln -s /usr/local/" + hadoopVersion + " /usr/local/hadoop"])

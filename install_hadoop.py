@@ -1,7 +1,10 @@
 #!/usr/bin/python
 # Hadoop Cluster Installation Program
 
-import ConfigParser, string, os, sys, subprocess
+import ConfigParser
+import os
+import sys
+import subprocess
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as MD
 
@@ -11,44 +14,44 @@ workingDir = os.getcwd()
 
 
 def getConfig():
-   CONFIG_FILE = (workingDir + "/hdp_install.config")
-   config = ConfigParser.ConfigParser()
-   config.read([CONFIG_FILE])
-   return config
+    CONFIG_FILE = (workingDir + "/hdp_install.config")
+    config = ConfigParser.ConfigParser()
+    config.read([CONFIG_FILE])
+    return config
 
 
 def prettify(elem):
-   roughString = ET.tostring(elem, 'utf-8')
-   reparsed = MD.parseString(roughString)
-   return reparsed.toprettyxml(indent="  ")
+    roughString = ET.tostring(elem, 'utf-8')
+    reparsed = MD.parseString(roughString)
+    return reparsed.toprettyxml(indent="  ")
 
 
 def installPrereq(nodeName):
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "yum -y install wget"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "yum -y install openssh-clients"])
-   subprocess.call(["scp", workingDir + "/" + javaPackageFile, "root@" + nodeName.strip() + ":/root"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "chkconfig iptables off"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "service iptables stop"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "echo 'SELINUX=disabled' > /etc/selinux/config"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "echo 'SELINUXTYPE=targeted' >> /etc/selinux/config"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "yes | rpm -ivh /root/" + javaPackageFile])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "echo >> /etc/sysctl.conf"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "sed -i '/fs.file-max=/d' /etc/sysctl.conf"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "echo fs.file-max=122880 >> /etc/sysctl.conf"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "echo  >> /etc/security/limits.conf"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "sed -i '/root hard nofile/d' /etc/security/limits.conf"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "sed -i '/root soft nofile/d' /etc/security/limits.conf"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "sed -i '/root hard nproc/d' /etc/security/limits.conf"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "sed -i '/root soft nproc/d' /etc/security/limits.conf"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "echo root hard nofile 122880 >> /etc/security/limits.conf"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "echo root soft nofile 65536 >> /etc/security/limits.conf"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "echo root hard nproc  65536 >> /etc/security/limits.conf"])
-   subprocess.call(["ssh", "root@" + nodeName.strip(), "echo root soft nproc  65536 >> /etc/security/limits.conf"])
-   return
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "yum -y install wget"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "yum -y install openssh-clients"])
+    subprocess.call(["scp", workingDir + "/" + javaPackageFile, "root@" + nodeName.strip() + ":/root"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "chkconfig iptables off"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "service iptables stop"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "echo 'SELINUX=disabled' > /etc/selinux/config"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "echo 'SELINUXTYPE=targeted' >> /etc/selinux/config"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "yes | rpm -ivh /root/" + javaPackageFile])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "echo >> /etc/sysctl.conf"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "sed -i '/fs.file-max=/d' /etc/sysctl.conf"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "echo fs.file-max=122880 >> /etc/sysctl.conf"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "echo  >> /etc/security/limits.conf"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "sed -i '/root hard nofile/d' /etc/security/limits.conf"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "sed -i '/root soft nofile/d' /etc/security/limits.conf"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "sed -i '/root hard nproc/d' /etc/security/limits.conf"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "sed -i '/root soft nproc/d' /etc/security/limits.conf"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "echo root hard nofile 122880 >> /etc/security/limits.conf"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "echo root soft nofile 65536 >> /etc/security/limits.conf"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "echo root hard nproc  65536 >> /etc/security/limits.conf"])
+    subprocess.call(["ssh", "root@" + nodeName.strip(), "echo root soft nproc  65536 >> /etc/security/limits.conf"])
+    return
 
 
 if __name__ == '__main__':
-   config = getConfig()
+    config = getConfig()
 
 
 #print config.items('DataNodes')
@@ -67,25 +70,25 @@ print 'Secondary NameNode: ' + secNameNode
 print 'JobTracker: ' + jobTracker
 print 'DataNode\'lar:'
 for dataNode in dataNodes:
-   print 'DataNode: ' + dataNode
+    print 'DataNode: ' + dataNode
 print 'dfs.data.dir: ' + dfsDataDir
 
 
 while True:
-   choice = raw_input("Kurulum Baslasin mi?(e/h): ").lower()
-   if choice in yes:
-      break
-   elif choice in no:
-      sys.exit(0)
-   else:
-      print("Lutfen 'e' ya da 'h' seklinde yanitlayin!!!")
+    choice = raw_input("Kurulum Baslasin mi?(e/h): ").lower()
+    if choice in yes:
+        break
+    elif choice in no:
+        sys.exit(0)
+    else:
+        print("Lutfen 'e' ya da 'h' seklinde yanitlayin!!!")
 
 
 installPrereq(nameNode)
 installPrereq(secNameNode)
 installPrereq(jobTracker)
 for dataNode in dataNodes:
-   installPrereq(dataNode)
+    installPrereq(dataNode)
 
 
 subprocess.call(["rm", "-rf", workingDir + "/tmp"])
@@ -204,7 +207,7 @@ text_file.close()
 
 text_file = open(workingDir + "/tmp/" + hadoopVersion + "/conf/slaves", "w")
 for dataNode in dataNodes:
-   text_file.write(dataNode + "\n")
+    text_file.write(dataNode + "\n")
 text_file.close()
 
 
@@ -218,6 +221,5 @@ subprocess.call(["ssh", "root@" + secNameNode.strip(), "ln -s /usr/local/" + had
 subprocess.call(["scp", "-r", workingDir + "/tmp/" + hadoopVersion, "root@" + jobTracker.strip() + ":/usr/local/"])
 subprocess.call(["ssh", "root@" + jobTracker.strip(), "ln -s /usr/local/" + hadoopVersion + " /usr/local/hadoop"])
 for dataNode in dataNodes:
-   subprocess.call(["scp", "-r", workingDir + "/tmp/" + hadoopVersion, "root@" + dataNode.strip() + ":/usr/local/"])
-   subprocess.call(["ssh", "root@" + dataNode.strip(), "ln -s /usr/local/" + hadoopVersion + " /usr/local/hadoop"])
-
+    subprocess.call(["scp", "-r", workingDir + "/tmp/" + hadoopVersion, "root@" + dataNode.strip() + ":/usr/local/"])
+    subprocess.call(["ssh", "root@" + dataNode.strip(), "ln -s /usr/local/" + hadoopVersion + " /usr/local/hadoop"])
